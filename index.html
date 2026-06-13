@@ -5,11 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Miao 日程表</title>
     <style>
-        /* 載入自訂 Miao 字體 */
+        /* 載入自訂 Miao-2.ttf 字體 */
         @font-face {
             font-family: 'Miao';
-            src: url('Miao.woff2') format('woff2'),
-                 url('Miao.ttf') format('truetype');
+            src: url('Miao-2.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
             font-display: swap;
@@ -17,6 +16,7 @@
 
         :root {
             --primary-color: #6C63FF;
+            --primary-light: #EEECFF;
             --bg-color: #F8F9FA;
             --card-bg: #FFFFFF;
             --text-color: #2D3142;
@@ -36,11 +36,11 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             padding: 16px;
-            padding-bottom: 100px; /* 為底部固定按鈕留空 */
+            padding-bottom: 100px;
         }
 
         header {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -55,7 +55,7 @@
             display: flex;
             align-items: center;
             background: var(--card-bg);
-            padding: 8px 12px;
+            padding: 6px 12px;
             border-radius: 20px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         }
@@ -64,26 +64,50 @@
             border: none;
             outline: none;
             font-family: inherit;
-            font-size: 16px;
+            font-size: 15px;
             color: var(--text-color);
             background: transparent;
         }
 
-        /* 日程列表空狀態 */
-        .empty-state {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--text-light);
-            font-size: 16px;
+        /* 視圖切換標籤 (日/週) */
+        .view-switcher {
+            display: flex;
+            background: #EED;
+            background-color: #EDF2F7;
+            padding: 4px;
+            border-radius: 12px;
+            margin-bottom: 20px;
         }
 
-        /* 日程卡片 */
+        .view-btn {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            border: none;
+            background: transparent;
+            color: var(--text-light);
+            cursor: pointer;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .view-btn.active {
+            background: var(--card-bg);
+            color: var(--primary-color);
+            font-weight: bold;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+
+        /* 內容容器 */
         .schedule-list {
             display: flex;
             flex-direction: column;
             gap: 12px;
         }
 
+        /* 單個日程卡片 */
         .schedule-item {
             background: var(--card-bg);
             padding: 16px;
@@ -97,7 +121,7 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
@@ -122,7 +146,6 @@
             background: #FFE5E5;
             color: #FF5B5B;
             border: none;
-            padding: 8px 12px;
             border-radius: 50%;
             font-size: 16px;
             cursor: pointer;
@@ -133,7 +156,62 @@
             justify-content: center;
         }
 
-        /* 底部浮動新增按鈕 */
+        /* 週視圖專用樣式 */
+        .week-day-section {
+            background: var(--card-bg);
+            border-radius: var(--border-radius);
+            padding: 14px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+            margin-bottom: 12px;
+        }
+
+        .week-day-header {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--text-color);
+            padding-bottom: 8px;
+            border-bottom: 1px dashed #E2E8F0;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .week-day-header.today {
+            color: var(--primary-color);
+        }
+
+        .week-event-item {
+            display: flex;
+            font-size: 15px;
+            padding: 6px 0;
+            border-bottom: 1px solid #FAFAFA;
+        }
+
+        .week-event-time {
+            width: 60px;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .week-event-title {
+            flex: 1;
+            color: var(--text-color);
+        }
+
+        .no-event-text {
+            color: var(--text-light);
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+            font-size: 16px;
+        }
+
+        /* 浮動按鈕 */
         .fab {
             position: fixed;
             bottom: 24px;
@@ -153,7 +231,7 @@
             z-index: 10;
         }
 
-        /* 彈出視窗 (Modal) */
+        /* 彈出視窗 */
         .modal {
             display: none;
             position: fixed;
@@ -163,7 +241,7 @@
             height: 100%;
             background: rgba(0,0,0,0.5);
             justify-content: center;
-            align-items: flex-end; /* 手機版從底部彈出比較好操作 */
+            align-items: flex-end;
             z-index: 100;
         }
 
@@ -252,13 +330,26 @@
         </div>
     </header>
 
-    <main id="scheduleContainer" class="schedule-list"></main>
+    <!-- 視圖切換標籤 -->
+    <div class="view-switcher">
+        <button class="view-btn active" id="dayViewBtn" onclick="switchView('day')">日行事曆</button>
+        <button class="view-btn" id="weekViewBtn" onclick="switchView('week')">週行事曆</button>
+    </div>
 
+    <!-- 主要內容顯示區域 -->
+    <main id="scheduleContainer"></main>
+
+    <!-- 浮動新增按鈕 -->
     <button class="fab" onclick="openModal()">+</button>
 
+    <!-- 新增行程的彈出視窗 -->
     <div class="modal" id="scheduleModal">
         <div class="modal-content">
             <h3 class="modal-title">新增行程</h3>
+            <div class="form-group">
+                <label for="eventDate">日期</label>
+                <input type="date" id="eventDate">
+            </div>
             <div class="form-group">
                 <label for="eventTitle">行程內容</label>
                 <input type="text" id="eventTitle" placeholder="要做些什麼呢？" autocomplete="off">
@@ -275,23 +366,38 @@
     </div>
 
     <script>
-        // 初始化日期選擇器為今天
+        // 全域狀態管理
+        let currentView = 'day'; // 'day' 或 'week'
         const datePicker = document.getElementById('currentDatePicker');
-        const today = new Date().toISOString().split('T')[0];
-        datePicker.value = today;
+        
+        // 初始化日期為今天
+        const todayStr = new Date().toISOString().split('T')[0];
+        datePicker.value = todayStr;
 
-        // 當切換日期時，重新渲染列表
-        datePicker.addEventListener('change', renderSchedules);
+        // 當變更日期選擇器時，觸發重新渲染
+        datePicker.addEventListener('change', render);
 
-        // 綁定 Modal 點擊空白處關閉
+        // 綁定點擊 Modal 空白處關閉
         document.getElementById('scheduleModal').addEventListener('click', function(e) {
             if (e.target === this) closeModal();
         });
+
+        // 切換日/週視圖
+        function switchView(view) {
+            currentView = view;
+            document.getElementById('dayViewBtn').classList.toggle('active', view === 'day');
+            document.getElementById('weekViewBtn').classList.toggle('active', view === 'week');
+            render();
+        }
 
         // 開啟 Modal
         function openModal() {
             document.getElementById('scheduleModal').classList.add('active');
             document.getElementById('eventTitle').focus();
+            
+            // 新增時自動帶入當前選取的日期
+            document.getElementById('eventDate').value = datePicker.value;
+            
             // 預設時間帶入當前時間
             const now = new Date();
             const hours = String(now.getHours()).padStart(2, '0');
@@ -305,84 +411,162 @@
             document.getElementById('eventTitle').value = '';
         }
 
-        // 讀取指定日期的 localStorage 資料
-        function getSchedulesByDate(date) {
-            const allData = JSON.parse(localStorage.getItem('miao_schedules')) || {};
-            return allData[date] || [];
+        // 獲取 localStorage 資料
+        function getAllSchedules() {
+            return JSON.parse(localStorage.getItem('miao_schedules')) || {};
         }
 
         // 儲存行程資料
         function saveSchedule() {
             const title = document.getElementById('eventTitle').value.trim();
             const time = document.getElementById('eventTime').value;
-            const selectedDate = datePicker.value;
+            const targetDate = document.getElementById('eventDate').value;
 
+            if (!targetDate) {
+                alert('請選擇日期！');
+                return;
+            }
             if (!title) {
                 alert('請輸入行程內容！');
                 return;
             }
 
-            const allData = JSON.parse(localStorage.getItem('miao_schedules')) || {};
-            if (!allData[selectedDate]) {
-                allData[selectedDate] = [];
+            const allData = getAllSchedules();
+            if (!allData[targetDate]) {
+                allData[targetDate] = [];
             }
 
-            // 新增單筆紀錄 (包含唯一 ID 用於刪除)
-            allData[selectedDate].push({
+            allData[targetDate].push({
                 id: Date.now(),
                 title: title,
                 time: time
             });
 
             // 依時間先後排序
-            allData[selectedDate].sort((a, b) => a.time.localeCompare(b.time));
+            allData[targetDate].sort((a, b) => a.time.localeCompare(b.time));
 
             localStorage.setItem('miao_schedules', JSON.stringify(allData));
             
+            // 將頂部日期同步為剛才新增的日期，方便查看
+            datePicker.value = targetDate;
+
             closeModal();
-            renderSchedules();
+            render();
         }
 
         // 刪除行程
-        function deleteSchedule(id) {
-            const selectedDate = datePicker.value;
-            const allData = JSON.parse(localStorage.getItem('miao_schedules')) || {};
-            
-            if (allData[selectedDate]) {
-                allData[selectedDate] = allData[selectedDate].filter(item => item.id !== id);
-                // 如果該日期沒行程了，就刪除該日期的 Key
-                if (allData[selectedDate].length === 0) {
-                    delete allData[selectedDate];
+        function deleteSchedule(date, id) {
+            const allData = getAllSchedules();
+            if (allData[date]) {
+                allData[date] = allData[date].filter(item => item.id !== id);
+                if (allData[date].length === 0) {
+                    delete allData[date];
                 }
                 localStorage.setItem('miao_schedules', JSON.stringify(allData));
-                renderSchedules();
+                render();
             }
         }
 
-        // 渲染畫面
-        function renderSchedules() {
+        // 計算某天所在的那一週（一到日）的日期陣列
+        function getWeekDays(currentDateStr) {
+            const current = new Date(currentDateStr);
+            const dayOfWeeks = current.getDay(); // 0 是週日, 1-6 是週一到週六
+            
+            // 計算週一差幾天
+            const distanceToMonday = dayOfWeeks === 0 ? -6 : 1 - dayOfWeeks;
+            const monday = new Date(current);
+            monday.setDate(current.getDate() + distanceToMonday);
+
+            const weekDays = [];
+            const weekdayNames = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+
+            for (let i = 0; i < 7; i++) {
+                const nextDay = new Date(monday);
+                nextDay.setDate(monday.getDate() + i);
+                const dateStr = nextDay.toISOString().split('T')[0];
+                weekDays.push({
+                    date: dateStr,
+                    dayLabel: weekdayNames[i],
+                    displayLabel: `${dateStr.substring(5)} (${weekdayNames[i]})` // 例如 05-20 (週一)
+                });
+            }
+            return weekDays;
+        }
+
+        // 渲染主控台
+        function render() {
             const container = document.getElementById('scheduleContainer');
             const selectedDate = datePicker.value;
-            const list = getSchedulesByDate(selectedDate);
+            const allData = getAllSchedules();
 
-            if (list.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <p>今天沒有安排行程 (喵)</p>
+            if (currentView === 'day') {
+                // Render 日檢視
+                const list = allData[selectedDate] || [];
+                container.className = "schedule-list";
+
+                if (list.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <p>今天沒有安排行程 (喵)</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = list.map(item => `
+                    <div class="schedule-item">
+                        <div class="schedule-info">
+                            <div class="schedule-time">${item.time || '全天'}</div>
+                            <div class="schedule-title">${escapeHtml(item.title)}</div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteSchedule('${selectedDate}', ${item.id})">×</button>
                     </div>
-                `;
-                return;
+                `).join('');
+
+            } else {
+                // Render 週檢視
+                container.className = ""; // 清除單日列表的 flex 樣式
+                const weekDays = getWeekDays(selectedDate);
+                let weekHtml = '';
+
+                weekDays.forEach(day => {
+                    const dayEvents = allData[day.date] || [];
+                    const isToday = day.date === todayStr ? 'today' : '';
+                    
+                    let eventsHtml = '';
+                    if (dayEvents.length === 0) {
+                        eventsHtml = `<div class="no-event-text">無行程</div>`;
+                    } else {
+                        eventsHtml = dayEvents.map(ev => `
+                            <div class="week-event-item">
+                                <div class="week-event-time">${ev.time || '全天'}</div>
+                                <div class="week-event-title">${escapeHtml(ev.title)}</div>
+                            </div>
+                        `).join('');
+                    }
+
+                    // 點擊週視圖中的標題，頂部日期選擇器會自動切換至該天，並跳回日檢視方便修改
+                    weekHtml += `
+                        <div class="week-day-section">
+                            <div class="week-day-header ${isToday}" onclick="quickSwitchToDay('${day.date}')" style="cursor:pointer;">
+                                <span>${day.displayLabel}</span>
+                                <span style="font-size:12px; font-weight:normal; color:var(--primary-color);">查看詳情 ➔</span>
+                            </div>
+                            <div class="week-events-container">
+                                ${eventsHtml}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = weekHtml;
             }
+        }
 
-            container.innerHTML = list.map(item => `
-                <div class="schedule-item">
-                    <div class="schedule-info">
-                        <div class="schedule-time">${item.time || '全天'}</div>
-                        <div class="schedule-title">${escapeHtml(item.title)}</div>
-                    </div>
-                    <button class="delete-btn" onclick="deleteSchedule(${item.id})">×</button>
-                </div>
-            `).join('');
+        // 週視圖點擊某天時，切換至該天的日檢視
+        function quickSwitchToDay(dateStr) {
+            datePicker.value = dateStr;
+            switchView('day');
         }
 
         // 防 XSS 攻擊的文字過濾
@@ -396,8 +580,7 @@
         }
 
         // 首次載入執行
-        renderSchedules();
+        render();
     </script>
 </body>
 </html>
-
